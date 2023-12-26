@@ -151,7 +151,7 @@ public class RobotAutoDriveToAprilTagOmni extends LinearOpMode
         telemetry.update();
         waitForStart();
 
-        while (opModeIsActive);
+        while (opModeIsActive());
         {
             targetFound = false;
             desiredTag = null;
