@@ -86,7 +86,7 @@ import java.util.concurrent.TimeUnit;
 public class RobotAutoDriveToAprilTagOmni extends LinearOpMode
 {
     // Adjust these numbers to suit your robot.
-    final double DESIRED_DISTANCE = 12.0; //  this is how close the camera should get to the target (inches)
+    final double DESIRED_DISTANCE = 5.0; //  this is how close the camera should get to the target (inches)
 
     //  Set the GAIN constants to control the relationship between the measured position error, and how much power is
     //  applied to the drive motors to correct the error.
@@ -107,7 +107,7 @@ public class RobotAutoDriveToAprilTagOmni extends LinearOpMode
    // private DcMotor clawmotor = null;
 
     private static final boolean USE_WEBCAM = true;  // Set true to use a webcam, or false for a phone camera
-    private static final int DESIRED_TAG_ID = 0;     // Choose the tag you want to approach or set to -1 for ANY tag.
+    private static final int DESIRED_TAG_ID = -1;     // Choose the tag you want to approach or set to -1 for ANY tag.
     private VisionPortal visionPortal;               // Used to manage the video source.
     private AprilTagProcessor aprilTag;              // Used for managing the AprilTag detection process.
     private AprilTagDetection desiredTag = null;     // Used to hold the data for a detected AprilTag
@@ -178,18 +178,17 @@ public class RobotAutoDriveToAprilTagOmni extends LinearOpMode
                 telemetry.addData("Range",  "%5.1f inches", desiredTag.ftcPose.range);
                 telemetry.addData("Bearing","%3.0f degrees", desiredTag.ftcPose.bearing);
                 telemetry.addData("Yaw","%3.0f degrees", desiredTag.ftcPose.yaw);
-            } else {
+            } //else {
                //telemetry.addData(">","Drive using joysticks to find valid target\n");
-            }
+            //}
 
             // If Left Bumper is being pressed, AND we have found the desired target, Drive to target Automatically .
-            if (targetFound) {//&&(desiredTag.ftcPose.range - DESIRED_DISTANCE)==0
+            if (targetFound) {//&&(desiredTag.ftcPose.range - DESIRED_DISTANCE)==5
 
                 // Determine heading, range and Yaw (tag image rotation) error so we can use them to control the robot automatically.
                 double  rangeError      = (desiredTag.ftcPose.range - DESIRED_DISTANCE);
                 double  headingError    = desiredTag.ftcPose.bearing;
                 double  yawError        = desiredTag.ftcPose.yaw;
-                //armmotor.setPower(0.33);
 
 
                 // Use the speed and turn "gains" to calculate how we want the robot to move.
