@@ -162,7 +162,7 @@ public class RobotAutoDriveToAprilTagOmni extends LinearOpMode
             List<AprilTagDetection> currentDetections = aprilTag.getDetections();
             for (AprilTagDetection detection : currentDetections) {
                 if ((detection.metadata != null) &&
-                    ((DESIRED_TAG_ID < 7) || (detection.id == DESIRED_TAG_ID))  ){
+                    ((DESIRED_TAG_ID < 1) || (detection.id == DESIRED_TAG_ID))  ){
                     targetFound = true;
                     desiredTag = detection;
                     break;  // don't look any further.
