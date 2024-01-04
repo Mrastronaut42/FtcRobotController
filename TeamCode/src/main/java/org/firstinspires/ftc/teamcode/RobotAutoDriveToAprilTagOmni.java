@@ -153,6 +153,16 @@ public class RobotAutoDriveToAprilTagOmni extends LinearOpMode
 
         while (opModeIsActive());
         {
+            // Autonomous code starts here
+            // Move forward for 2 seconds
+            leftFrontDrive.setPower(0.5);
+            rightFrontDrive.setPower(0.5);
+            sleep(2000); // 2000 milliseconds = 2 seconds
+
+            // Stop motors
+            leftFrontDrive.setPower(0);
+            rightFrontDrive.setPower(0);
+
             targetFound = false;
             desiredTag = null;
 
