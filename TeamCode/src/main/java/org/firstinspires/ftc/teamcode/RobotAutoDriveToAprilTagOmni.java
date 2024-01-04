@@ -155,14 +155,12 @@ public class RobotAutoDriveToAprilTagOmni extends LinearOpMode
         {
             targetFound = false;
             desiredTag = null;
-        }
-        {
 
             // Step through the list of detected tags and look for a matching tag
             List<AprilTagDetection> currentDetections = aprilTag.getDetections();
             for (AprilTagDetection detection : currentDetections) {
                 if ((detection.metadata != null) &&
-                    ((DESIRED_TAG_ID < 1) || (detection.id == DESIRED_TAG_ID))  ){
+                    ((DESIRED_TAG_ID < -1) || (detection.id == DESIRED_TAG_ID))  ){
                     targetFound = true;
                     desiredTag = detection;
                     break;  // don't look any further.
