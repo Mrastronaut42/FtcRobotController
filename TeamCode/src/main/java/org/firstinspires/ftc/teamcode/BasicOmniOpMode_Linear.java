@@ -77,11 +77,14 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
     private DcMotor leftBackDrive = null;
     private DcMotor rightFrontDrive = null;
     private DcMotor rightBackDrive = null;
-    private DcMotor armmotor = null;
+    private DcMotor RightArm = null;
     private DcMotor slidemotor = null;
-    private Servo clawmotor = null;
-    private DcMotor hangmotor=null;
-    private Servo airplane=null;
+//    private Servo clawmotor = null;
+//    private DcMotor hangmotor=null;
+    private DcMotor Leftarm=null;
+    private Servo leftclaw=null;
+    private Servo rightclaw=null;
+    private Servo openclaw=null;
 
 
     @Override
@@ -93,11 +96,15 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
         leftBackDrive  = hardwareMap.get(DcMotor.class, "lb");
         rightFrontDrive = hardwareMap.get(DcMotor.class, "rf");
         rightBackDrive = hardwareMap.get(DcMotor.class, "rb");
-        armmotor = hardwareMap.get(DcMotor.class, "am");
+
+        RightArm = hardwareMap.get(DcMotor.class, "ram");
         slidemotor = hardwareMap.get(DcMotor.class, "sm");
-        clawmotor = hardwareMap.get(Servo.class, "csm");
-        hangmotor = hardwareMap.get(DcMotor.class, "hm");
-        airplane = hardwareMap.get(Servo.class, "ap" );
+//        clawmotor = hardwareMap.get(Servo.class, "csm");
+//        hangmotor = hardwareMap.get(DcMotor.class, "hm");
+       Leftarm = hardwareMap.get(DcMotor.class, "lam" );
+       leftclaw = hardwareMap.get(Servo.class, "lc");
+        rightclaw = hardwareMap.get(Servo.class, "rc");
+        openclaw = hardwareMap.get(Servo.class, "oc");
 
 
 
@@ -112,12 +119,13 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
         // Reverse the direction (flip FORWARD <-> REVERSE ) of any wheel that runs backward
         // Keep testing until ALL the wheels move the robot forward when you push the left joystick forward.
         leftFrontDrive.setDirection(DcMotor.Direction.REVERSE);
-        leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
+        leftBackDrive.setDirection(DcMotor.Direction.FORWARD);
         rightFrontDrive.setDirection(DcMotor.Direction.FORWARD);
-        rightBackDrive.setDirection(DcMotor.Direction.FORWARD);
-        armmotor.setDirection(DcMotor.Direction.FORWARD);
+        rightBackDrive.setDirection(DcMotor.Direction.REVERSE);
+        RightArm.setDirection(DcMotor.Direction.REVERSE);
+        Leftarm.setDirection(DcMotorSimple.Direction.FORWARD);
         slidemotor.setDirection(DcMotor.Direction.REVERSE);
-        hangmotor.setDirection(DcMotorSimple.Direction.FORWARD);
+//        hangmotor.setDirection(DcMotorSimple.Direction.FORWARD);
         // Wait for the game to start (driver presses PLAY)
         telemetry.addData("Status", "Initialized");
         telemetry.update();
@@ -130,9 +138,9 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
             double max;
 
             // POV Mode uses left joystick to go forward & strafe, and right joystick to rotate.
-            double axial   = -gamepad1.left_stick_y;  // Note: pushing stick forward gives negative value
+            double axial   = gamepad1.right_stick_x;  // Note: pushing stick forward gives negative value
             double lateral =  gamepad1.left_stick_x;
-            double yaw     =  gamepad1.right_stick_x;
+            double yaw     =  gamepad1.left_stick_y;
 
             // Combine the joystick requests for each axis-motion to determine each wheel's power.
             // Set up a variable for each drive wheel to save the power level for telemetry.
@@ -154,41 +162,61 @@ public class BasicOmniOpMode_Linear extends LinearOpMode {
                 rightBackPower  /= max;
             }
 
-            if (gamepad2.right_bumper){
+            if (gamepad2.right_trigger > 0){
                 slidemotor.setPower(0.5);
-            } else if (gamepad2.left_bumper){
+            } else if (gamepad2.left_trigger > 0){
                 slidemotor.setPower(-0.33);
             }else{
                 slidemotor.setPower(0);
             }
 
-          if (gamepad2.right_trigger > 0) {
-              armmotor.setPower(0.40);
-          }else if (gamepad2.left_trigger > 0) {
-              armmotor.setPower(-0.35);
+          if (gamepad2.right_bumper) {
+              RightArm.setPower(0.75);
+              Leftarm.setPower(0.75);
+          }else if (gamepad2.left_bumper) {
+              RightArm.setPower(-0.65);
+              Leftarm.setPower(-0.65);
           }else{
-              armmotor.setPower(0);
+              RightArm.setPower(0);
+              Leftarm.setPower(0);
+              RightArm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+              Leftarm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
           }
 
             if (gamepad2.dpad_down){
-                clawmotor.setPosition(0.20);
+                rightclaw.setPosition(0);
+                leftclaw.setPosition(1.0);
             } else if (gamepad2.dpad_up){
-                clawmotor.setPosition(0.45);
+                rightclaw.setPosition(1.0);
+                leftclaw.setPosition(0);
+            }else{
+                rightclaw.setPosition(0.5);
+                leftclaw.setPosition(0.5);
             }
-            if (gamepad2.b) {
-                hangmotor.setPower(1);
-            } else if (gamepad2.a) {
-                hangmotor.setPower(-1);
+            if(gamepad2.dpad_right){
+                openclaw.setPosition(1);
+            }
+            else if (gamepad2.dpad_left){
+                openclaw.setPosition(0);
             }
             else{
-                hangmotor.setPower(0);
-
-        }
-            if (gamepad1.dpad_left){
-                airplane.setPosition(1);
-            } else if (gamepad1.dpad_right){
-                airplane.setPosition(0.35);
+                openclaw.setPosition(0.5);
             }
+//            if (gamepad2.b) {
+//                hangmotor.setPower(1);
+//            } else if (gamepad2.a) {
+//                hangmotor.setPower(-1);
+//            }
+//            else{
+//                hangmotor.setPower(0);
+//
+//        }
+//            if (gamepad1.dpad_left){
+//                airplane.setPosition(1);
+//            } else if (gamepad1.dpad_right){
+//                airplane.setPosition(0.35);
+//            }
             // This is test code:
             //
             // Uncomment the following code to test your motor directions.
