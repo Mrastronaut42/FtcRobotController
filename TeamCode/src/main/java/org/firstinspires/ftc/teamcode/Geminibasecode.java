@@ -4,57 +4,124 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Servo;
 
-@TeleOp(name = "Base Mecanum TeleOp", group = "Drive")
+@TeleOp(name = "TeleOp_Mecanum", group = "TeleOp")
 public class Geminibasecode extends LinearOpMode {
 
+    // Servo Constants
+    private static final double FEEDER_REST_POS = 0.0;
+    private static final double FEEDER_PUSH_POS = 0.5;
+    private static final double GATE_CLOSED_POS = 0.0;
+    private static final double GATE_OPEN_POS   = 0.5;
+
+    // Shooter Power
+    private static final double SHOOTER_POWER = 0.80;
+
+    // Hardware Declarations
+    private DcMotor leftFrontDrive = null;
+    private DcMotor rightFrontDrive = null;
+    private DcMotor leftBackDrive = null;
+    private DcMotor rightBackDrive = null;
+    private DcMotor shooterMotor = null;
+    private Servo feederServo = null;
+    private Servo gateServo = null;
+
     @Override
-    public void runOpMode() throws InterruptedException {
-        // Hardware Mapping matching REV Control/Expansion Hub port names
-        DcMotor frontLeft  = hardwareMap.get(DcMotor.class, "front_left");
-        DcMotor backLeft   = hardwareMap.get(DcMotor.class, "back_left");
-        DcMotor frontRight = hardwareMap.get(DcMotor.class, "front_right");
-        DcMotor backRight  = hardwareMap.get(DcMotor.class, "back_right");
+    public void runOpMode() {
 
-        // Reverse left motors so forward stick inputs drive all wheels forward
-        frontLeft.setDirection(DcMotorSimple.Direction.REVERSE);
-        backLeft.setDirection(DcMotorSimple.Direction.REVERSE);
+        // Hardware Mapping
+        leftFrontDrive  = hardwareMap.get(DcMotor.class, "left_front_drive");
+        rightFrontDrive = hardwareMap.get(DcMotor.class, "right_front_drive");
+        leftBackDrive   = hardwareMap.get(DcMotor.class, "left_back_drive");
+        rightBackDrive  = hardwareMap.get(DcMotor.class, "right_back_drive");
 
-        // Set brake mode to resist external pushing when sticks are centered
-        frontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        backLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        frontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        backRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        try {
+            shooterMotor = hardwareMap.get(DcMotor.class, "shooter_motor");
+            feederServo  = hardwareMap.get(Servo.class, "feeder_servo");
+            gateServo    = hardwareMap.get(Servo.class, "gate_servo");
+        } catch (Exception e) {
+            telemetry.addData("Notice", "Optional hardware mechanisms missing.");
+        }
 
-        telemetry.addData("Status", "Initialized & Ready");
+        // Motor Directions
+        leftFrontDrive.setDirection(DcMotorSimple.Direction.REVERSE);
+        leftBackDrive.setDirection(DcMotorSimple.Direction.REVERSE);
+        rightFrontDrive.setDirection(DcMotorSimple.Direction.FORWARD);
+        rightBackDrive.setDirection(DcMotorSimple.Direction.FORWARD);
+
+        // Run Without Encoders for TeleOp responsiveness
+        leftFrontDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        rightFrontDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        leftBackDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        rightBackDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+        // Initial Servo States
+        if (gateServo != null) gateServo.setPosition(GATE_CLOSED_POS);
+        if (feederServo != null) feederServo.setPosition(FEEDER_REST_POS);
+
+        telemetry.addData("Status", "TeleOp Initialized");
         telemetry.update();
 
         waitForStart();
 
         while (opModeIsActive()) {
-            // Gamepad 1 Controls
-            // Left Stick Y: Forward / Backward (Inverted because pushed UP returns -1.0)
-            double y = -gamepad1.left_stick_y;
 
-            // Left Stick X: Strafe Left / Strafe Right (1.1 compensates for strafe friction)
-            double x = gamepad1.left_stick_x * 1.1;
+            // -----------------------------------------------------------------
+            // GAMEPAD 1: Mecanum Drive Controls
+            // -----------------------------------------------------------------
+            double y  = -gamepad1.left_stick_y;  // Forward/Backward (inverted stick)
+            double x  =  gamepad1.left_stick_x;   // Strafe Left/Right
+            double rx =  gamepad1.right_stick_x;  // Turn Left/Right
 
-            // Right Stick X: Rotate Left / Rotate Right
-            double rx = gamepad1.right_stick_x;
-
-            // Denominator normalizes motor power values to stay within -1.0 to 1.0 range
+            // Calculate Mecanum power distribution
             double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1.0);
-
             double frontLeftPower  = (y + x + rx) / denominator;
             double backLeftPower   = (y - x + rx) / denominator;
             double frontRightPower = (y - x - rx) / denominator;
             double backRightPower  = (y + x - rx) / denominator;
 
-            // Write output power levels to drive motors
-            frontLeft.setPower(frontLeftPower);
-            backLeft.setPower(backLeftPower);
-            frontRight.setPower(frontRightPower);
-            backRight.setPower(backRightPower);
+            leftFrontDrive.setPower(frontLeftPower);
+            leftBackDrive.setPower(backLeftPower);
+            rightFrontDrive.setPower(frontRightPower);
+            rightBackDrive.setPower(backRightPower);
+
+            // -----------------------------------------------------------------
+            // GAMEPAD 2: Mechanism Controls (Shooter, Gate, Feeder)
+            // -----------------------------------------------------------------
+
+            // Shooter Motor Toggle / Hold (Gamepad 2 - Button A or Right Trigger)
+            if (shooterMotor != null) {
+                if (gamepad2.a || gamepad2.right_trigger > 0.1) {
+                    shooterMotor.setPower(SHOOTER_POWER);
+                } else {
+                    shooterMotor.setPower(0.0);
+                }
+            }
+
+            // Gate Servo Control (Gamepad 2 - Right Bumper opens, otherwise holds closed)
+            if (gateServo != null) {
+                if (gamepad2.right_bumper) {
+                    gateServo.setPosition(GATE_OPEN_POS);
+                } else {
+                    gateServo.setPosition(GATE_CLOSED_POS);
+                }
+            }
+
+            // Feeder Servo Control (Gamepad 2 - Button X or Left Bumper pushes ball)
+            if (feederServo != null) {
+                if (gamepad2.x || gamepad2.left_bumper) {
+                    feederServo.setPosition(FEEDER_PUSH_POS);
+                } else {
+                    feederServo.setPosition(FEEDER_REST_POS);
+                }
+            }
+
+            // Telemetry Output
+            telemetry.addData("Shooter Status", shooterMotor != null && shooterMotor.getPower() > 0 ? "SPINNING" : "OFF");
+            telemetry.addData("Gate Status", gamepad2.right_bumper ? "OPEN" : "CLOSED");
+            telemetry.addData("Drive Motors", "LF: %.2f | RF: %.2f", frontLeftPower, frontRightPower);
+            telemetry.update();
         }
     }
 }
